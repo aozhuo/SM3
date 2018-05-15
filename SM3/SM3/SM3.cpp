@@ -102,7 +102,7 @@ vector<vector<Word>> SM3::GroupingMessage(Byte *message, uint64_t length_sum)
 
 Word* SM3::ExtendGroup(vector<Word> group)
 {
-	Word *group_extended = new Word[132];
+	Word *group_extended = new Word[132]();
 	for (int i = 0;i < 16;i++)
 	{
 		group_extended[i] = group[i];
@@ -139,13 +139,6 @@ Word* SM3::CF(Word *V, Word *B)
 		message_hash[6] = RringShiftLeft(message_hash[5], 19);
 		message_hash[5] = message_hash[4];
 		message_hash[4] = P0(TT2);
-
-		//cout << dec << i << " : ";
-		//for (int j = 0;j < 8;j++)
-		//{
-		//	cout << hex << message_hash[j] << ' ';
-		//}
-		//cout << endl;
 	}
 	for (int i = 0;i < 8;i++)
 	{
@@ -165,8 +158,11 @@ Word* SM3::CFF(vector<vector<Word>> message_grouped, uint64_t group_number)
 		//扩充分组至132个Word
 		Word* group_extended = ExtendGroup(message_grouped[i]);
 		//循环压缩
-		memcpy(V, CF(V, group_extended), 32);
-		//PrintfWord(V, 8);
+		Word* last_V = CF(V, group_extended);
+		memcpy(V, last_V, 32);
+		//释放空间
+		delete[] group_extended;
+		delete[] last_V;
 	}
 	return V;
 }
@@ -179,9 +175,9 @@ Word* SM3::SM3Hash(Byte *message, uint64_t length)
 	uint64_t group_number = length_sum / 64;
 	//对消息进行填充
 	Byte* message_padded = PadMessage(message, length);
-	//PrintfByte(message_padded, length_sum);
 	//将消息进行分组
 	vector<vector<Word>> message_grouped = GroupingMessage(message_padded, length_sum);
+	delete[] message_padded;
 	return CFF(message_grouped, group_number);
 }
 
